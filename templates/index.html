@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>EchoMind AI+</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="main-container">
+        <!-- Left Sidebar: Chat History -->
+        <div class="sidebar">
+            <div class="chat-header">
+                <p><strong>Id: {{user_id}}</strong></p>
+                <a href="{{ url_for('logout') }}" class="logout-link">🚪 Logout</a>
+            </div><br>
+            <div class="export-buttons">
+            <a href="/export_chat/{{ current_chat_id }}/txt" class="export-btn">📄 TXT</a>
+            <a href="/export_chat/{{ current_chat_id }}/pdf" class="export-btn">📑 PDF</a>
+            <a href="/export_chat/{{ current_chat_id }}/docx" class="export-btn">📝 DOCX</a>
+            </div><br>
+
+            <button onclick="window.location.href='/new_chat'" class="new-chat-btn">+ New Chat</button>
+            <div class="chat-history">
+                {% for chat_id in chats.keys() %}
+                    <div class="chat-item {% if chat_id == current_chat_id %}active{% endif %}"
+                         onclick="window.location.href='/chat/{{ chat_id }}'">
+                        Chat {{ loop.index }}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="chat-container">
+            <h1 class="chat-title">EchoMind AI+</h1>
+
+            <!-- Chat history -->
+            <div class="chat-box" id="chat-box">
+                {% for role, message in chat_history %}
+                    {% set msg = message|string %}
+                    {% if msg.endswith('.jpg') or msg.endswith('.png') or msg.endswith('.jpeg') %}
+                        {% if role == "user" %}
+                            <div class="chat-message user">
+                                <img src="{{ url_for('static', filename=msg) }}" alt="user image" class="chat-image">
+                            </div>
+                        {% else %}
+                            <div class="chat-message bot">{{ msg|safe }}</div>
+                        {% endif %}
+                    {% elif msg.endswith('.mp3') or msg.endswith('.wav') or msg.endswith('.m4a') %}
+                        {% if role == "user" %}
+                            <div class="chat-message user">
+                                <audio controls>
+                                    <source src="{{ url_for('static', filename=msg) }}" type="audio/mpeg" alt="audio file">
+                                    Your browser does not support the audio element.
+                                </audio>
+                            </div>
+                        {% else %}
+                            <div class="chat-message bot">{{ msg|safe }}</div>
+                        {% endif %}
+                    {% else %}
+                        {% if role == "user" %}
+                            <div class="chat-message user">{{ msg }}</div>
+                        {% else %}
+                            <div class="chat-message bot">{{ msg|safe }}</div>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            <!-- Input Area -->
+            <form action="/chat/{{ current_chat_id }}" method="POST" enctype="multipart/form-data" class="input-area">
+                
+                <!-- Universal user text input -->
+                <input type="text" id="user_input" name="user_input" placeholder="Type your message or prompt...">
+
+                <!-- Mode selector -->
+                <select name="action" id="action">
+                    <option value="chat">💬 Chat</option>
+                    <option value="text_to_image">🎨 Text → Image</option>
+                    <option value="image_to_text">🖼️ Image → Text</option>
+                    <option value="audio_to_text">🎵 audio → Text</option>
+                </select>
+
+                <!-- Image file (for Image→Text) -->
+                <input type="file" name="image_input" accept="image/*" id="file-input" hidden>
+                <label for="file-input" class="upload-btn">🖼️</label>
+                <span id="file-name"></span>
+
+                <!-- Audio file -->
+                <input type="file" name="audio_file" accept="audio/*" id="audio-input" hidden>
+                <label for="audio-input" class="upload-btn">🎵</label>
+                <span id="audio-name"></span>
+
+                <!-- Model selector -->
+                <select name="model_choice">
+                    <option value="claude">Claude 3 Haiku</option>
+                    <option value="mistral">Mistral 7B</option>
+                    <option value="llama" selected>LLaMA 3 70B</option>
+                    <option value="gpt">GPT-3.5 Turbo</option>
+                </select>
+
+                <!-- Mic button (speech-to-text) -->
+                <button type="button" id="mic-btn">🎙️</button>
+
+                <!-- Send button -->
+                <button type="submit">Send</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const micBtn = document.getElementById("mic-btn");
+        const inputBox = document.getElementById("user_input");
+        const fileInput = document.getElementById("file-input");
+        const fileNameSpan = document.getElementById("file-name");
+        const audioInput = document.getElementById("audio-input");
+        const audioNameSpan = document.getElementById("audio-name");
+        const actionSelect = document.getElementById("action");
+
+        // Speech to text
+        micBtn.addEventListener("click", () => {
+            const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.lang = "en-IN";
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+            recognition.start();
+            recognition.onresult = function(event) {
+                const speechResult = event.results[0][0].transcript;
+                inputBox.value = speechResult;
+            };
+        });
+
+        // Image file display
+        fileInput.addEventListener("change", () => {
+            fileNameSpan.textContent = fileInput.files.length > 0 ? fileInput.files[0].name : "";
+        });
+
+        // Audio file display
+        audioInput.addEventListener("change", () => {
+            audioNameSpan.textContent = audioInput.files.length > 0 ? audioInput.files[0].name : "";
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+sentence-transformers faiss-cpu
+flask
+torch
+io
+transformers
+soundfile
+pandas
+numpy
+subprocess
+joblib
+sklearn
+openai
+threading
+werkzeug.security
+gtts
+pygame
+speech_recognition
+dotenv
+reportlab
+docx
+os
+re
+librosa
+easyocr
+PIL
+smtplib
+textwrap
